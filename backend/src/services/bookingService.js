@@ -1,4 +1,15 @@
-const bookings = [];
+const {
+  validateBookingData
+} = require('./validationService');
+
+const {
+  hasConflict
+} = require('./bookingConflictService');
+
+const {
+  save,
+  findByRoom
+} = require('../repositories/bookingRepository');
 
 function createBooking(
   userId,
@@ -7,27 +18,22 @@ function createBooking(
   startTime,
   endTime
 ) {
-  if (!userId) {
-    throw new Error('User is required');
-  }
-
-  if (!roomId) {
-    throw new Error('Room is required');
-  }
-
-  if (!bookingDate) {
-    throw new Error('Date is required');
-  }
-
-  const existingBooking = bookings.find(
-    booking =>
-      booking.roomId === roomId &&
-      booking.bookingDate === bookingDate &&
-      booking.startTime === startTime
+  validateBookingData(
+    userId,
+    roomId,
+    bookingDate
   );
 
-  if (existingBooking) {
-    throw new Error('Room already booked');
+  if (
+    hasConflict(
+      roomId,
+      bookingDate,
+      startTime
+    )
+  ) {
+    throw new Error(
+      'Room already booked'
+    );
   }
 
   const booking = {
@@ -40,15 +46,13 @@ function createBooking(
     status: 'confirmed'
   };
 
-  bookings.push(booking);
+  save(booking);
 
   return booking;
 }
 
 function getBookingsByRoom(roomId) {
-  return bookings.filter(
-    booking => booking.roomId === roomId
-  );
+  return findByRoom(roomId);
 }
 
 module.exports = {
